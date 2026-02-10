@@ -11,7 +11,22 @@ echo ""
 # Check if requirements.txt exists
 if [ -f "requirements.txt" ]; then
     echo "Installing Python dependencies..."
-    pip install -r requirements.txt
+    # Use pip3 explicitly to ensure Python 3 is used
+    if command -v pip3 &> /dev/null; then
+        pip3 install -r requirements.txt
+    elif command -v pip &> /dev/null; then
+        # Check if pip is Python 3
+        PYTHON_VERSION=$(pip --version | grep -oP 'python \d+\.\d+' | grep -oP '\d+')
+        if [ "$PYTHON_VERSION" -ge 3 ]; then
+            pip install -r requirements.txt
+        else
+            echo "Error: Python 3 is required but pip is pointing to Python 2"
+            exit 1
+        fi
+    else
+        echo "Error: pip3 or pip not found. Please install Python 3 and pip."
+        exit 1
+    fi
     echo "Dependencies installed successfully."
     echo ""
 else
@@ -21,7 +36,9 @@ fi
 
 # Verify Python package versions if installed
 echo "Verifying installed package versions..."
-if command -v pip &> /dev/null; then
+if command -v pip3 &> /dev/null; then
+    pip3 list | grep -E "lightgbm|python-multipart|snowflake" || echo "Python packages not found."
+elif command -v pip &> /dev/null; then
     pip list | grep -E "lightgbm|python-multipart|snowflake" || echo "Python packages not found."
 fi
 echo ""
